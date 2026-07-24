@@ -21,6 +21,13 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* The `hidden` attribute must win over any element's own `display` value
+   (e.g. .gate/.sheet set display, which would otherwise keep them on
+   screen even when hidden). Keep this authoritative. */
+[hidden] {
+  display: none !important;
+}
+
 html,
 body {
   margin: 0;
