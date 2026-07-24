@@ -1,0 +1,66 @@
+name: Deploy Recipe Book to Pages
+
+# Publishes the Recipe Book PWA to GitHub Pages.
+#
+# One-time setup: Settings -> Pages -> Source must be "GitHub Actions".
+#
+# The SVG icon is rasterized into the PNG sizes the manifest and iOS
+# reference, so no binaries need to be committed to the repo.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install rasterizer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends librsvg2-bin imagemagick
+
+      - name: Assemble _site
+        run: |
+          set -euo pipefail
+          rm -rf _site
+          mkdir -p _site/icons
+          cp index.html styles.css app.js sw.js manifest.webmanifest _site/
+          cp icons/icon.svg _site/icons/
+
+          # Rasterize the SVG into the PNG sizes the manifest references.
+          rsvg-convert -w 192 -h 192 icons/icon.svg -o _site/icons/icon-192.png
+          rsvg-convert -w 512 -h 512 icons/icon.svg -o _site/icons/icon-512.png
+          # Maskable: pad inside the safe zone so Android masks don't clip it.
+          rsvg-convert -w 410 -h 410 icons/icon.svg -o /tmp/icon-inner.png
+          convert -size 512x512 xc:'#c2410c' \
+            \( /tmp/icon-inner.png \) -gravity center -composite \
+            _site/icons/icon-maskable-512.png
+
+          touch _site/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

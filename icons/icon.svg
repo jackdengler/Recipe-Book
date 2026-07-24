@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Recipe Book">
+  <rect width="512" height="512" rx="112" fill="#c2410c"/>
+  <!-- open book -->
+  <g fill="none" stroke="#fff7ed" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M256 150c-34-26-84-34-130-30-11 1-20 10-20 21v186c0 12 11 22 23 20 42-6 88 2 127 25" fill="#fb923c" fill-opacity="0.25"/>
+    <path d="M256 150c34-26 84-34 130-30 11 1 20 10 20 21v186c0 12-11 22-23 20-42-6-88 2-127 25" fill="#fb923c" fill-opacity="0.25"/>
+    <path d="M256 150v243"/>
+    <path d="M150 205h60M150 250h60M150 295h44"/>
+    <path d="M302 205h60M302 250h60M302 295h44"/>
+  </g>
+</svg>

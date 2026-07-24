@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+    />
+    <meta name="theme-color" content="#c2410c" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Recipes" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Recipe Book</title>
+  </head>
+  <body>
+    <div id="app" aria-live="polite">
+      <!-- Top bar -->
+      <header class="topbar">
+        <h1 class="topbar__title">Recipe Book</h1>
+        <div class="topbar__actions">
+          <span id="sync" class="sync" title="Sync status" aria-live="polite"></span>
+          <button id="add-btn" class="icon-btn" type="button" aria-label="Add recipe">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Search + filters -->
+      <div class="filters">
+        <div class="search">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="11" cy="11" r="7" />
+            <path d="M21 21l-4.3-4.3" />
+          </svg>
+          <input id="search" type="search" placeholder="Search recipes or ingredients" autocomplete="off" />
+        </div>
+        <div id="tagbar" class="tagbar" role="tablist" aria-label="Filter by tag"></div>
+      </div>
+
+      <!-- List -->
+      <main id="list" class="list"></main>
+
+      <!-- Empty / loading state -->
+      <div id="state" class="state" hidden></div>
+    </div>
+
+    <!-- Detail view -->
+    <section id="detail" class="sheet" hidden aria-modal="true" role="dialog">
+      <div class="sheet__bar">
+        <button class="text-btn" id="detail-back" type="button">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          Back
+        </button>
+        <div class="sheet__bar-actions">
+          <button class="text-btn" id="detail-edit" type="button">Edit</button>
+          <button class="text-btn danger" id="detail-delete" type="button">Delete</button>
+        </div>
+      </div>
+      <div id="detail-body" class="sheet__body"></div>
+    </section>
+
+    <!-- Editor form -->
+    <section id="editor" class="sheet" hidden aria-modal="true" role="dialog">
+      <div class="sheet__bar">
+        <button class="text-btn" id="editor-cancel" type="button">Cancel</button>
+        <div id="editor-title" class="sheet__bar-title">New recipe</div>
+        <button class="text-btn primary" id="editor-save" type="button">Save</button>
+      </div>
+      <form id="editor-form" class="sheet__body form" novalidate>
+        <label class="field">
+          <span>Title</span>
+          <input name="title" type="text" required placeholder="e.g. Weeknight Bolognese" />
+        </label>
+        <label class="field">
+          <span>Description</span>
+          <textarea name="description" rows="2" placeholder="A short note about this dish"></textarea>
+        </label>
+        <div class="field-row">
+          <label class="field">
+            <span>Servings</span>
+            <input name="servings" type="text" inputmode="numeric" placeholder="4" />
+          </label>
+          <label class="field">
+            <span>Prep</span>
+            <input name="prepTime" type="text" placeholder="15 min" />
+          </label>
+          <label class="field">
+            <span>Cook</span>
+            <input name="cookTime" type="text" placeholder="30 min" />
+          </label>
+        </div>
+        <label class="field">
+          <span>Ingredients <em>(one per line)</em></span>
+          <textarea name="ingredients" rows="6" placeholder="2 tbsp olive oil&#10;1 onion, diced&#10;400g canned tomatoes"></textarea>
+        </label>
+        <label class="field">
+          <span>Steps <em>(one per line)</em></span>
+          <textarea name="steps" rows="6" placeholder="Heat the oil over medium heat.&#10;Add the onion and cook until soft."></textarea>
+        </label>
+        <label class="field">
+          <span>Tags <em>(comma separated)</em></span>
+          <input name="tags" type="text" placeholder="dinner, pasta, quick" />
+        </label>
+      </form>
+    </section>
+
+    <!-- Token gate (only when opened standalone without a PAT) -->
+    <div id="gate" class="gate" hidden>
+      <div class="gate__card">
+        <div class="gate__icon" aria-hidden="true">🍳</div>
+        <h2>Recipe Book</h2>
+        <p id="gate-msg">Paste a GitHub token to unlock your recipes.</p>
+        <input id="gate-input" type="password" placeholder="GitHub personal access token" autocomplete="off" />
+        <button id="gate-submit" type="button">Unlock</button>
+        <p class="gate__hint">Needs <code>repo</code> scope. Stored only for this session.</p>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" hidden></div>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>
