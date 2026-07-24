@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Recipe Book</title>
+  <meta name="description" content="Recipe Book — a Progressive Web App." />
+
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="theme-color" content="#3b82f6" />
+  <link rel="icon" href="./icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Recipe Book" />
+
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0f172a; color: #e2e8f0; }
+    }
+    main { text-align: center; padding: 2rem; max-width: 32rem; }
+    .logo {
+      width: 88px; height: 88px; border-radius: 22px;
+      display: grid; place-items: center; margin: 0 auto 1.25rem;
+      background: #3b82f6;
+    }
+    .logo span { width: 40px; height: 40px; border: 10px solid #fff; border-radius: 50%; }
+    h1 { margin: 0 0 .5rem; font-size: 1.6rem; }
+    p { margin: 0; opacity: .7; line-height: 1.5; }
+    #status { margin-top: 1.25rem; font-size: .85rem; opacity: .6; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="logo"><span></span></div>
+    <h1>Recipe Book</h1>
+    <p>A blank Progressive Web App, ready to build on.</p>
+    <p id="status">Loading…</p>
+  </main>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js")
+          .then(() => { document.getElementById("status").textContent = "Ready — installable & offline-capable."; })
+          .catch((err) => { document.getElementById("status").textContent = "Service worker failed: " + err.message; });
+      });
+    } else {
+      document.getElementById("status").textContent = "Service workers not supported in this browser.";
+    }
+  </script>
+</body>
+</html>
