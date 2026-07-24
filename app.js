@@ -348,15 +348,110 @@ function showState(emoji, title, sub) {
     <p>${escapeHtml(sub)}</p>`;
 }
 
+/* ------------------------------ quantity scaling ------------------------------
+   Ingredients are stored as plain strings. At view time we pull the numeric
+   amounts out of each string so they can be rescaled live: edit any amount (or
+   tap a multiplier) and every quantity — plus the servings — follows. Cooking
+   times and the method steps are left untouched (they don't scale linearly). */
+
+const FRAC_UNI = [
+  [0, ""], [1 / 8, "⅛"], [1 / 6, "⅙"], [1 / 4, "¼"], [1 / 3, "⅓"], [3 / 8, "⅜"],
+  [1 / 2, "½"], [5 / 8, "⅝"], [2 / 3, "⅔"], [3 / 4, "¾"], [5 / 6, "⅚"], [7 / 8, "⅞"], [1, ""],
+];
+const FRAC_PARSE = {
+  "½": 0.5, "⅓": 1 / 3, "⅔": 2 / 3, "¼": 0.25, "¾": 0.75, "⅛": 0.125,
+  "⅜": 0.375, "⅝": 0.625, "⅞": 0.875, "⅙": 1 / 6, "⅚": 5 / 6,
+};
+const QTY_RE = /\d+\s+\d+\/\d+|\d+\s*[½⅓⅔¼¾⅛⅜⅝⅞⅙⅚]|\d+\/\d+|[½⅓⅔¼¾⅛⅜⅝⅞⅙⅚]|\d+(?:\.\d+)?/g;
+
+// Format a number as a friendly kitchen fraction (falls back to a decimal).
+function fmtQty(v) {
+  if (!isFinite(v)) return "—";
+  const whole = Math.floor(v + 1e-9);
+  const frac = v - whole;
+  let bestF = 0, bestS = "", bestErr = 1;
+  for (const [f, s] of FRAC_UNI) {
+    const e = Math.abs(frac - f);
+    if (e < bestErr) { bestErr = e; bestF = f; bestS = s; }
+  }
+  if (bestErr > 0.045) return String(Math.round(v * 100) / 100);
+  let w = whole;
+  if (bestF === 1) { w += 1; bestS = ""; }
+  if (w === 0 && !bestS) return "0";
+  if (w === 0) return bestS;
+  return bestS ? w + " " + bestS : String(w);
+}
+
+// Parse "1 1/2", "1½", "3/4", "1.7" → a number (NaN if none).
+function parseQty(str) {
+  if (str == null) return NaN;
+  let s = String(str).trim().toLowerCase();
+  if (!s) return NaN;
+  for (const ch in FRAC_PARSE) s = s.split(ch).join(" " + FRAC_PARSE[ch] + " ");
+  let total = 0, saw = false;
+  for (const tok of s.split(/\s+/)) {
+    if (!tok) continue;
+    if (tok.indexOf("/") > -1) {
+      const [a, b] = tok.split("/").map(Number);
+      if (b) { total += a / b; saw = true; }
+    } else {
+      const n = parseFloat(tok);
+      if (isFinite(n)) { total += n; saw = true; }
+    }
+  }
+  return saw ? total : NaN;
+}
+
+// Split a string into text / numeric-quantity parts.
+function qtyParts(str) {
+  const parts = [];
+  let last = 0, m;
+  QTY_RE.lastIndex = 0;
+  while ((m = QTY_RE.exec(str))) {
+    if (m.index > last) parts.push({ t: "text", v: str.slice(last, m.index) });
+    parts.push({ t: "num", base: parseQty(m[0]), orig: m[0] });
+    last = m.index + m[0].length;
+  }
+  if (last < str.length) parts.push({ t: "text", v: str.slice(last) });
+  return parts;
+}
+
+// Render a quantity-bearing string to HTML. When editable, the first number
+// becomes an <input>; any further numbers become <span class="q">.
+function qtyHTML(str, editable) {
+  const parts = qtyParts(str);
+  let first = true, out = "", scalable = false;
+  for (const p of parts) {
+    if (p.t === "text") { out += escapeHtml(p.v); continue; }
+    scalable = true;
+    const attrs = `data-base="${p.base}" data-orig="${escapeHtml(p.orig)}"`;
+    if (editable && first) {
+      out += `<input class="amt" type="text" inputmode="decimal" aria-label="Amount" ${attrs} />`;
+    } else {
+      out += `<span class="q" ${attrs}></span>`;
+    }
+    first = false;
+  }
+  return { out, scalable };
+}
+
 /* ------------------------------ detail ------------------------------ */
+const detailScale = { factor: 1 };
+
 function openDetail(id) {
   const r = state.recipes.find((x) => x.id === id);
   if (!r) return;
   activeId = id;
+  detailScale.factor = 1;
+
+  const ings = (r.ingredients || []).map((i) => qtyHTML(i, true));
+  const hasScalable = ings.some((x) => x.scalable);
+
   const meta = [];
-  if (r.servings) meta.push(["Serves", r.servings]);
-  if (r.prepTime) meta.push(["Prep", r.prepTime]);
-  if (r.cookTime) meta.push(["Cook", r.cookTime]);
+  if (r.servings) meta.push(["Serves", qtyHTML(r.servings, false).out]);
+  if (r.prepTime) meta.push(["Prep", escapeHtml(r.prepTime)]);
+  if (r.cookTime) meta.push(["Cook", escapeHtml(r.cookTime)]);
+
   els.detailBody.innerHTML = `
     <div class="detail">
       <h2>${escapeHtml(r.title || "Untitled")}</h2>
@@ -364,14 +459,25 @@ function openDetail(id) {
       ${
         meta.length
           ? `<div class="detail__meta">${meta
-              .map(([k, v]) => `<div class="pill"><b>${escapeHtml(v)}</b><span>${k}</span></div>`)
+              .map(([k, v]) => `<div class="pill"><b>${v}</b><span>${k}</span></div>`)
               .join("")}</div>`
           : ""
       }
       ${
-        (r.ingredients || []).length
-          ? `<h3>Ingredients</h3><ul class="ing-list">${r.ingredients
-              .map((i) => `<li>${escapeHtml(i)}</li>`)
+        hasScalable
+          ? `<div class="scaler" role="group" aria-label="Scale recipe">
+               <span class="scaler__label">Scale <b class="scaler__x">1×</b></span>
+               <div class="scaler__mults">${[0.5, 1, 1.5, 2, 3]
+                 .map((m) => `<button type="button" class="mult" data-mult="${m}">${fmtQty(m)}×</button>`)
+                 .join("")}</div>
+             </div>
+             <p class="scaler__hint">Tap any amount and type a new one — the rest follow.</p>`
+          : ""
+      }
+      ${
+        ings.length
+          ? `<h3>Ingredients</h3><ul class="ing-list">${ings
+              .map((x) => `<li><span class="ing-text">${x.out}</span></li>`)
               .join("")}</ul>`
           : ""
       }
@@ -390,13 +496,60 @@ function openDetail(id) {
           : ""
       }
     </div>`;
+
+  wireDetailScale();
   els.detail.hidden = false;
   els.detailBody.scrollTop = 0;
+}
+
+function updateDetailScale(skip) {
+  const f = detailScale.factor;
+  const value = (el) => {
+    const base = parseFloat(el.dataset.base);
+    return Math.abs(f - 1) < 1e-9 ? el.dataset.orig : fmtQty(base * f);
+  };
+  els.detailBody.querySelectorAll(".amt").forEach((inp) => {
+    if (inp !== skip) inp.value = value(inp);
+  });
+  els.detailBody.querySelectorAll(".q").forEach((sp) => {
+    sp.textContent = value(sp);
+  });
+  const x = els.detailBody.querySelector(".scaler__x");
+  if (x) x.textContent = fmtQty(f) + "×";
+  els.detailBody.querySelectorAll(".mult").forEach((b) => {
+    b.setAttribute(
+      "aria-pressed",
+      Math.abs(parseFloat(b.dataset.mult) - f) < 1e-6 ? "true" : "false"
+    );
+  });
+}
+
+function wireDetailScale() {
+  els.detailBody.querySelectorAll(".mult").forEach((b) =>
+    b.addEventListener("click", () => {
+      detailScale.factor = parseFloat(b.dataset.mult);
+      updateDetailScale(null);
+    })
+  );
+  els.detailBody.querySelectorAll(".amt").forEach((inp) => {
+    inp.addEventListener("input", () => {
+      const v = parseQty(inp.value);
+      const base = parseFloat(inp.dataset.base);
+      if (isFinite(v) && v > 0 && base > 0) {
+        detailScale.factor = v / base;
+        updateDetailScale(inp);
+      }
+    });
+    inp.addEventListener("blur", () => updateDetailScale(null));
+    inp.addEventListener("focus", () => inp.select());
+  });
+  updateDetailScale(null);
 }
 
 function closeDetail() {
   els.detail.hidden = true;
   activeId = null;
+  detailScale.factor = 1;
 }
 
 /* ------------------------------ editor ------------------------------ */
