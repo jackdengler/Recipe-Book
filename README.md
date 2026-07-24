@@ -6,9 +6,11 @@ launcher.
 
 ## How it works
 
-- **Static PWA** — plain HTML/CSS/JS, no build step. Deployed to GitHub
-  Pages at `https://jackdengler.github.io/Recipe-Book/` by
-  `.github/workflows/deploy.yml`.
+- **Static PWA** — plain HTML/CSS/JS, no build step. Served straight
+  from `main` at `https://jackdengler.github.io/Recipe-Book/` via
+  GitHub Pages "Deploy from a branch" (Branch = `main`, Folder = `/`).
+  All assets, including the PNG icons, are committed — nothing is
+  generated at deploy time.
 - **Data** lives in `recipes.json` in the private
   [`private-data-storage`](https://github.com/jackdengler/private-data-storage)
   repo, read and written through the GitHub Contents API.
@@ -42,9 +44,8 @@ launcher.
 
 ## Setup notes
 
-1. **Pages** — Settings → Pages → Source = **GitHub Actions** (one time).
-2. The workflow rasterizes `icons/icon.svg` into the PNG icon sizes, so no
-   image binaries are committed.
+- **Pages** — Settings → Pages → Source = **Deploy from a branch**,
+  Branch = `main`, Folder = `/` (root). One time.
 
 ## Local dev
 
