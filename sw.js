@@ -1,4 +1,4 @@
-const CACHE = "recipe-book-v2";
+const CACHE = "recipe-book-v3";
 const SHELL = [
   "./",
   "./index.html",
@@ -6,6 +6,7 @@ const SHELL = [
   "./app.js",
   "./manifest.webmanifest",
   "./icons/icon.svg",
+  "./icons/icon-192.png",
 ];
 
 self.addEventListener("install", (e) => {
@@ -13,18 +14,28 @@ self.addEventListener("install", (e) => {
     caches
       .open(CACHE)
       .then((c) => c.addAll(SHELL))
+      .catch(() => {})
       .then(() => self.skipWaiting())
   );
 });
 
 self.addEventListener("activate", (e) => {
   e.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-      )
-      .then(() => self.clients.claim())
+    (async () => {
+      // Drop old caches.
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+      await self.clients.claim();
+      // Reload any open pages once so a brand-new shell takes effect
+      // immediately instead of waiting for the next manual refresh — this
+      // is what frees a client that was pinned to an old cached build.
+      const clients = await self.clients.matchAll({ type: "window" });
+      for (const c of clients) {
+        try {
+          c.navigate(c.url);
+        } catch (_) {}
+      }
+    })()
   );
 });
 
@@ -34,23 +45,20 @@ self.addEventListener("fetch", (e) => {
 
   const url = new URL(req.url);
 
-  // Never cache GitHub API traffic — always hit the network.
+  // Never touch GitHub API traffic — always straight to the network.
   if (url.hostname === "api.github.com") return;
+  if (url.origin !== self.location.origin) return;
 
-  // Same-origin shell: cache-first, fall back to network and warm the cache.
-  if (url.origin === self.location.origin) {
-    e.respondWith(
-      caches.match(req).then(
-        (hit) =>
-          hit ||
-          fetch(req)
-            .then((res) => {
-              const copy = res.clone();
-              caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
-              return res;
-            })
-            .catch(() => caches.match("./index.html"))
-      )
-    );
-  }
+  // Network-first for the app shell: online visitors always get the latest
+  // code; the cache is only a fallback when offline. This prevents a stale
+  // cached build from sticking around after a deploy.
+  e.respondWith(
+    fetch(req)
+      .then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        return res;
+      })
+      .catch(() => caches.match(req).then((hit) => hit || caches.match("./index.html")))
+  );
 });

@@ -535,12 +535,47 @@ els.search.addEventListener("input", (e) => {
   state.query = e.target.value;
   render();
 });
-els.gateSubmit.addEventListener("click", () => {
+/* Unlock always gives feedback: empty field, bad token, no network, or
+   success are all reflected in the gate message / button state. */
+async function handleUnlock() {
   const t = els.gateInput.value.trim();
-  if (t) setToken(t);
-});
+  if (!t) {
+    els.gateMsg.textContent = "Paste your GitHub token first.";
+    els.gateInput.focus();
+    return;
+  }
+  const btn = els.gateSubmit;
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Checking…";
+  els.gateMsg.textContent = "Verifying token…";
+  try {
+    const res = await fetch("https://api.github.com/user", {
+      headers: {
+        Authorization: `Bearer ${t}`,
+        Accept: "application/vnd.github+json",
+      },
+    });
+    if (res.status === 401) {
+      els.gateMsg.textContent = "That token was rejected — double-check it.";
+      return;
+    }
+    if (!res.ok) {
+      els.gateMsg.textContent = `Couldn't reach GitHub (${res.status}). Try again.`;
+      return;
+    }
+    els.gateMsg.textContent = "Loading your recipes…";
+    setToken(t); // valid — persist and load
+  } catch (_) {
+    els.gateMsg.textContent = "Network error — check your connection.";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = label;
+  }
+}
+els.gateSubmit.addEventListener("click", handleUnlock);
 els.gateInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") els.gateSubmit.click();
+  if (e.key === "Enter") handleUnlock();
 });
 window.addEventListener("online", syncPending);
 
