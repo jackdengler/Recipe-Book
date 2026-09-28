@@ -320,9 +320,9 @@ function render() {
     card.className = "card";
     card.type = "button";
     const meta = [];
-    if (r.servings) meta.push(`🍽 ${escapeHtml(r.servings)}`);
-    if (r.prepTime) meta.push(`⏱ ${escapeHtml(r.prepTime)} prep`);
-    if (r.cookTime) meta.push(`🔥 ${escapeHtml(r.cookTime)} cook`);
+    if (r.servings) meta.push(`Serves <b>${escapeHtml(r.servings)}</b>`);
+    if (r.prepTime) meta.push(`Prep <b>${escapeHtml(r.prepTime)}</b>`);
+    if (r.cookTime) meta.push(`Cook <b>${escapeHtml(r.cookTime)}</b>`);
     card.innerHTML = `
       <h2 class="card__title">${escapeHtml(r.title || "Untitled")}</h2>
       ${r.description ? `<p class="card__desc">${escapeHtml(r.description)}</p>` : ""}
@@ -731,6 +731,17 @@ els.gateInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") handleUnlock();
 });
 window.addEventListener("online", syncPending);
+
+// Light / dark: index.html's head script owns the shared co.theme key.
+const themeBtn = $("#toggle-theme");
+function labelThemeButton() {
+  const label = window.coTheme?.get() === "light" ? "Switch to dark mode" : "Switch to light mode";
+  themeBtn.setAttribute("aria-label", label);
+  themeBtn.title = label;
+}
+themeBtn.addEventListener("click", () => window.coTheme?.toggle());
+document.addEventListener("co:theme", labelThemeButton);
+labelThemeButton();
 
 // Hardware/gesture back closes the top-most sheet first.
 window.addEventListener("keydown", (e) => {

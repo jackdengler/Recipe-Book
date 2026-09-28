@@ -6,13 +6,55 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
     />
-    <meta name="theme-color" content="#c2410c" />
+    <meta name="theme-color" content="#0b0b0b" />
+    <script>
+      /* Light / dark theme shared with Central Optimus (same origin): one
+         localStorage key, co.theme = "dark" | "light" (default dark), applied
+         before first paint and kept in step via the storage event. Keep this
+         contract identical to central-optimus/launcher/theme.js. */
+      (function () {
+        var KEY = "co.theme";
+        var BAR = { dark: "#0b0b0b", light: "#f5f2ea" };
+        function read() {
+          try {
+            return localStorage.getItem(KEY) === "light" ? "light" : "dark";
+          } catch (_) {
+            return "dark";
+          }
+        }
+        function apply(theme) {
+          document.documentElement.dataset.theme = theme;
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute("content", BAR[theme]);
+          document.dispatchEvent(new CustomEvent("co:theme", { detail: theme }));
+        }
+        apply(read());
+        window.addEventListener("storage", function (e) {
+          if (e.key === KEY) apply(read());
+        });
+        window.coTheme = {
+          get: read,
+          set: function (theme) {
+            try {
+              localStorage.setItem(KEY, theme);
+            } catch (_) {}
+            apply(theme);
+          },
+          toggle: function () {
+            this.set(read() === "light" ? "dark" : "light");
+          },
+        };
+      })();
+    </script>
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-title" content="Recipes" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <link rel="preload" href="fonts/Anton-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="fonts/DMMono-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="fonts/DMMono-500.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="styles.css" />
     <title>Recipe Book</title>
   </head>
@@ -23,6 +65,15 @@
         <h1 class="topbar__title">Recipe Book</h1>
         <div class="topbar__actions">
           <span id="sync" class="sync" title="Sync status" aria-live="polite"></span>
+          <button id="toggle-theme" class="icon-btn theme-btn" type="button" aria-label="Switch to light mode" title="Switch to light mode">
+            <svg class="i-sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8" />
+            </svg>
+            <svg class="i-moon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />
+            </svg>
+          </button>
           <button id="add-btn" class="icon-btn" type="button" aria-label="Add recipe">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
               <path d="M12 5v14M5 12h14" />

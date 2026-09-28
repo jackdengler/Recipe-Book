@@ -1,4 +1,4 @@
-const CACHE = "recipe-book-v4";
+const CACHE = "recipe-book-v5";
 const SHELL = [
   "./",
   "./index.html",
@@ -7,6 +7,9 @@ const SHELL = [
   "./manifest.webmanifest",
   "./icons/icon.svg",
   "./icons/icon-192.png",
+  "./fonts/Anton-400.woff2",
+  "./fonts/DMMono-400.woff2",
+  "./fonts/DMMono-500.woff2",
 ];
 
 self.addEventListener("install", (e) => {

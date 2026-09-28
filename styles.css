@@ -1,19 +1,94 @@
+/* =====================================================================
+   Recipe Book — Central Optimus "Big Type" skin.
+   Print-black ground, square edges, DM Mono for everything small and
+   Anton for titles and big numbers. Yellow is a FILL (selected, primary);
+   yellow as text or a line always goes through --accent-ink. Recipe orange
+   (--brand) marks "this app": the header stripe, the recipe title band and
+   the ingredient ticks. Every rule below references the tokens only.
+   ===================================================================== */
+
+@font-face {
+  font-family: "Anton";
+  src: url("./fonts/Anton-400.woff2") format("woff2");
+  font-weight: 1 1000;
+  font-display: swap;
+}
+@font-face {
+  font-family: "DM Mono";
+  src: url("./fonts/DMMono-400.woff2") format("woff2");
+  font-weight: 1 499;
+  font-display: swap;
+}
+/* Heavier weights all land on DM Mono Medium; no faux bold. */
+@font-face {
+  font-family: "DM Mono";
+  src: url("./fonts/DMMono-500.woff2") format("woff2");
+  font-weight: 500 1000;
+  font-display: swap;
+}
+/* Anton's "×" is a tiny glyph; multipliers borrow DM Mono's for that one
+   character only (same file as above, so no extra download). */
+@font-face {
+  font-family: "RB Times";
+  src: url("./fonts/DMMono-500.woff2") format("woff2");
+  unicode-range: U+00D7;
+  font-display: swap;
+}
+
 :root {
-  --bg: #fff7ed;
-  --surface: #ffffff;
-  --surface-2: #fffbf5;
-  --ink: #2b1a0f;
-  --ink-soft: #7c5a45;
-  --line: #f0e0d0;
-  --accent: #c2410c;
-  --accent-ink: #7c2d12;
-  --accent-soft: #ffedd5;
-  --danger: #b42318;
-  --ok: #15803d;
-  --radius: 16px;
-  --shadow: 0 1px 2px rgba(80, 40, 10, 0.06), 0 8px 24px rgba(80, 40, 10, 0.06);
+  color-scheme: dark;
+  accent-color: #ffe500;
+  --ground: #0b0b0b;
+  --surface: #151515;
+  --surface-2: #101010;
+  --line: #3a3a3a;
+  --line-soft: #262626;
+  --ink: #f5f2ea;
+  --ink-2: #cfcac0;
+  --muted: #a8a49b;
+  --faint: #7a766e;
+  --accent: #ffe500; /* fills only */
+  --on-accent: #0b0b0b;
+  --accent-ink: #ffe500; /* accent as text / line */
+  --good: #5fd38a;
+  --warn: #ffb612;
+  --bad: #ff5a4f;
+  --on-bad: #0b0b0b;
+  /* Recipe Book orange. Paper on it is 4.6:1, so it carries paper text
+     in both themes; it is never used as text on the ground. */
+  --brand: #c2410c;
+  --on-brand: #f5f2ea;
+  --display: "Anton", "Impact", "Haettenschweiler", sans-serif;
+  --display-x: "RB Times", var(--display);
+  --mono: "DM Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --rule: 3px; /* heavy rule under screen / section titles */
+  --slant: 18px; /* band diagonal, as on the launcher */
+  --gutter: 16px;
+  --topbar-h: 76px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Light mode (co.theme = "light", applied in index.html before first
+   paint). The page flips to paper; yellow stays for fills and a dark
+   mustard carries accent text and lines. The orange band keeps its
+   colours. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --ground: #f5f2ea;
+  --surface: #fffdf8;
+  --surface-2: #efebe2;
+  --line: #cfc8ba;
+  --line-soft: #e2dccf;
+  --ink: #0b0b0b;
+  --ink-2: #3a3731;
+  --muted: #6b665d;
+  --faint: #8f897e;
+  --accent-ink: #7a6300;
+  --good: #1e7d32;
+  --warn: #8a5a00;
+  --bad: #b3261e;
+  --on-bad: #ffffff;
 }
 
 * {
@@ -33,118 +108,195 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
+  background: var(--ground);
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, sans-serif;
+  font-family: var(--mono);
+  font-weight: 400;
+  font-synthesis: none;
   color: var(--ink);
-  background: var(--bg);
   -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
   overscroll-behavior-y: none;
 }
 
 button {
   font-family: inherit;
+  color: inherit;
   cursor: pointer;
+  border-radius: 0;
+  touch-action: manipulation;
 }
 
-/* ---------- Top bar ---------- */
+:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 2px;
+}
+
+::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+/* ---------- Top bar: Anton title over a heavy rule ---------- */
 .topbar {
   position: sticky;
   top: 0;
   z-index: 10;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
-  padding: calc(var(--safe-top) + 14px) 18px 12px;
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
-  backdrop-filter: saturate(1.4) blur(10px);
-  border-bottom: 1px solid var(--line);
+  height: calc(var(--safe-top) + var(--topbar-h));
+  padding: calc(var(--safe-top) + 14px) var(--gutter) 12px;
+  /* A recipe-orange stripe along the top edge, like the app's colour tick
+     on the launcher strip. */
+  background: linear-gradient(var(--brand), var(--brand)) 0 var(--safe-top) / 100% 4px no-repeat,
+    var(--ground);
+  border-bottom: var(--rule) solid var(--ink);
 }
 
 .topbar__title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--accent-ink);
+  margin: 0 0 -3px;
+  min-width: 0;
+  font-family: var(--display);
+  /* 40px from 390px up; narrower phones scale it down so the title, the
+     sync word and both buttons always share one line. */
+  font-size: clamp(26px, calc(21.6vw - 43px), 40px);
+  font-weight: 400;
+  line-height: 0.86;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  color: var(--ink);
 }
 
 .topbar__actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex: none;
 }
 
 .sync {
-  font-size: 12px;
-  color: var(--ink-soft);
   min-width: 8px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 .sync.is-busy::after {
   content: "Saving…";
 }
 .sync.is-ok::after {
   content: "Saved";
-  color: var(--ok);
+  color: var(--good);
 }
 .sync.is-err::after {
   content: "Offline";
-  color: var(--danger);
+  color: var(--bad);
 }
 
+/* + is the primary action: a yellow square. */
 .icon-btn {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  border: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--accent);
+  border-radius: 0;
   background: var(--accent);
-  color: #fff;
-  box-shadow: var(--shadow);
-  transition: transform 0.12s ease, background 0.12s ease;
+  color: var(--on-accent);
+}
+.icon-btn svg {
+  stroke-width: 2.4;
 }
 .icon-btn:active {
-  transform: scale(0.92);
+  filter: brightness(0.9);
+}
+
+/* Theme toggle: sun in dark (tap for light), moon in light. */
+.icon-btn.theme-btn {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--ink);
+}
+.icon-btn.theme-btn svg {
+  stroke-width: 2;
+}
+.icon-btn.theme-btn:active {
+  filter: none;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.theme-btn .i-moon,
+:root[data-theme="light"] .theme-btn .i-sun {
+  display: none;
+}
+:root[data-theme="light"] .theme-btn .i-moon {
+  display: block;
 }
 
 /* ---------- Filters ---------- */
 .filters {
   position: sticky;
-  top: calc(var(--safe-top) + 64px);
+  top: calc(var(--safe-top) + var(--topbar-h));
   z-index: 9;
-  background: var(--bg);
-  padding: 12px 18px 8px;
+  background: var(--ground);
+  padding: 12px var(--gutter) 0;
+  border-bottom: 1px solid var(--line);
 }
 
 .search {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  height: 48px;
   padding: 0 12px;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 999px;
-  color: var(--ink-soft);
+  border-radius: 0;
+  color: var(--muted);
+}
+.search:focus-within {
+  border-color: var(--accent-ink);
+  box-shadow: inset 0 -2px 0 var(--accent-ink);
+}
+.search svg {
+  flex: none;
 }
 .search input {
   flex: 1;
+  min-width: 0;
+  height: 100%;
   border: none;
   outline: none;
   background: transparent;
-  padding: 11px 0;
+  padding: 0;
+  font-family: inherit;
   font-size: 16px;
   color: var(--ink);
+  text-overflow: ellipsis;
+}
+.search input::placeholder {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
+/* Tag chips scroll edge to edge under the search field. */
 .tagbar {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   overflow-x: auto;
-  padding: 12px 0 2px;
+  margin: 0 calc(-1 * var(--gutter));
+  padding: 10px var(--gutter) 12px;
+  scroll-padding: 0 var(--gutter);
   scrollbar-width: none;
 }
 .tagbar::-webkit-scrollbar {
@@ -152,54 +304,66 @@ button {
 }
 .chip {
   flex: 0 0 auto;
+  height: 34px;
+  padding: 0 12px;
   border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink-soft);
-  padding: 7px 14px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 600;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   white-space: nowrap;
-  transition: all 0.12s ease;
 }
 .chip[aria-selected="true"] {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
+}
+.chip:active {
+  border-color: var(--ink-2);
 }
 
-/* ---------- List ---------- */
+/* ---------- List: flat rows, hairline between ---------- */
 .list {
   display: grid;
-  gap: 12px;
-  padding: 8px 18px calc(var(--safe-bottom) + 32px);
+  gap: 0;
+  padding: 0 0 calc(var(--safe-bottom) + 40px);
 }
 
+/* A flex column so a card stretched by its grid row keeps its content at
+   the top instead of the button's default vertical centring. */
 .card {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
   width: 100%;
   text-align: left;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  border-radius: var(--radius);
-  padding: 16px;
-  box-shadow: var(--shadow);
-  transition: transform 0.12s ease;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  padding: 18px var(--gutter) 20px;
 }
 .card:active {
-  transform: scale(0.985);
+  background: var(--surface);
 }
 .card__title {
-  margin: 0 0 4px;
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  margin: 0 0 8px;
+  font-family: var(--display);
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 .card__desc {
   margin: 0;
-  font-size: 14px;
-  color: var(--ink-soft);
-  line-height: 1.4;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -208,15 +372,22 @@ button {
 .card__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 14px;
+  gap: 4px 18px;
   margin-top: 12px;
-  font-size: 12px;
-  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 .card__meta span {
   display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  align-items: baseline;
+  gap: 6px;
+}
+.card__meta b {
+  font-weight: 500;
+  color: var(--ink);
 }
 .card__tags {
   display: flex;
@@ -225,30 +396,51 @@ button {
   margin-top: 12px;
 }
 .tag {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 9px;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent-ink);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  color: var(--muted);
 }
 
-/* ---------- Empty state ---------- */
+/* ---------- Empty state: a big Anton line over a heavy rule ---------- */
 .state {
-  text-align: center;
-  color: var(--ink-soft);
-  padding: 64px 32px;
+  text-align: left;
+  color: var(--muted);
+  padding: 32px var(--gutter) 64px;
 }
+/* The emoji makes way for a recipe-orange tick. */
 .state__emoji {
-  font-size: 44px;
+  width: 40px;
+  height: 8px;
+  margin-bottom: 14px;
+  background: var(--brand);
+  font-size: 0;
+  line-height: 0;
+  overflow: hidden;
 }
 .state h3 {
-  margin: 12px 0 4px;
+  margin: 0 0 10px;
+  padding-top: 12px;
+  border-top: var(--rule) solid var(--ink);
+  font-family: var(--display);
+  font-size: 48px;
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: 0;
+  text-transform: uppercase;
   color: var(--ink);
 }
 .state p {
   margin: 0;
-  font-size: 14px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 /* ---------- Sheets (detail / editor) ---------- */
@@ -256,10 +448,10 @@ button {
   position: fixed;
   inset: 0;
   z-index: 40;
-  background: var(--bg);
+  background: var(--ground);
   display: flex;
   flex-direction: column;
-  animation: slideup 0.24s ease;
+  animation: slideup 0.2s ease-out;
 }
 @keyframes slideup {
   from {
@@ -270,97 +462,163 @@ button {
 .sheet__bar {
   position: sticky;
   top: 0;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: calc(var(--safe-top) + 12px) 14px 12px;
+  gap: 8px;
+  padding: calc(var(--safe-top) + 10px) var(--gutter) 10px;
   border-bottom: 1px solid var(--line);
-  background: var(--bg);
+  background: var(--ground);
 }
 .sheet__bar-actions {
   display: flex;
-  gap: 4px;
+  gap: 8px;
 }
 .sheet__bar-title {
-  font-weight: 700;
-  font-size: 15px;
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .sheet__body {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 20px 18px calc(var(--safe-bottom) + 48px);
+  padding: 20px var(--gutter) calc(var(--safe-bottom) + 48px);
 }
 
+/* Bar buttons: square, hairline, uppercase mono. */
 .text-btn {
-  border: none;
-  background: none;
-  color: var(--accent);
-  font-size: 15px;
-  font-weight: 600;
-  padding: 8px 8px;
+  flex: none;
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  border-radius: 8px;
+  gap: 4px;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.text-btn svg {
+  width: 16px;
+  height: 16px;
+  margin-left: -4px;
+  stroke-width: 2.4;
 }
 .text-btn.primary {
-  color: #fff;
   background: var(--accent);
-  padding: 8px 16px;
-  border-radius: 999px;
+  border-color: var(--accent);
+  color: var(--on-accent);
+  padding: 0 18px;
 }
 .text-btn.danger {
-  color: var(--danger);
+  color: var(--bad);
 }
 .text-btn:active {
-  opacity: 0.6;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.text-btn.primary:active {
+  filter: brightness(0.9);
 }
 
 /* ---------- Detail content ---------- */
+/* The recipe's name sits on a recipe-orange band with the launcher's
+   diagonal cut. */
 .detail h2 {
-  margin: 0 0 6px;
-  font-size: 26px;
-  letter-spacing: -0.02em;
-  color: var(--accent-ink);
+  margin: -20px calc(-1 * var(--gutter)) 0;
+  padding: 18px var(--gutter) calc(var(--slant) + 18px);
+  background: var(--brand);
+  color: var(--on-brand);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--slant)), 0 100%);
+  font-family: var(--display);
+  font-size: 46px;
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  overflow-wrap: break-word;
 }
 .detail__desc {
-  color: var(--ink-soft);
-  margin: 0 0 16px;
-  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 14px 0 20px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.detail h2 + .detail__meta,
+.detail h2 + .scaler {
+  margin-top: 18px;
 }
 .detail__meta {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 0;
 }
 .pill {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 8px 14px;
-  text-align: center;
-  min-width: 72px;
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px 12px 14px;
+  border-right: 1px solid var(--line);
+  text-align: left;
+}
+.pill:first-child {
+  padding-left: 0;
+}
+.pill:last-child {
+  border-right: 0;
 }
 .pill b {
   display: block;
-  font-size: 16px;
+  font-family: var(--display);
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: 0;
+  text-transform: uppercase;
   color: var(--ink);
+  overflow-wrap: break-word;
 }
-.pill span {
-  font-size: 11px;
+.pill > span {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--ink-soft);
+  color: var(--muted);
 }
+
+/* Section titles: Anton over the heavy rule. */
 .detail h3 {
-  font-size: 13px;
+  margin: 32px 0 0;
+  padding: 10px 0 10px;
+  border-top: var(--rule) solid var(--ink);
+  font-family: var(--display);
+  font-size: 34px;
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: 0;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--accent);
-  margin: 24px 0 10px;
+  color: var(--ink);
 }
 .ing-list {
   list-style: none;
@@ -371,18 +629,22 @@ button {
   display: flex;
   gap: 12px;
   align-items: flex-start;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--line);
-  line-height: 1.4;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.ing-list li:first-child {
+  border-top: 1px solid var(--line);
 }
 .ing-list li::before {
   content: "";
   flex: 0 0 auto;
   width: 8px;
   height: 8px;
-  margin-top: 7px;
-  border-radius: 50%;
-  background: var(--accent);
+  margin-top: 8px;
+  border-radius: 0;
+  background: var(--brand);
 }
 .ing-text {
   flex: 1;
@@ -393,76 +655,106 @@ button {
 .scaler {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 14px;
-  margin: 20px 0 4px;
-  padding: 12px 14px;
-  background: var(--surface);
+  margin: 20px 0 0;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 0;
+  background: transparent;
 }
 .scaler__label {
-  font-size: 14px;
-  color: var(--ink-soft);
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 .scaler__label b {
+  font-family: var(--display-x);
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0;
   color: var(--accent-ink);
-  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 .scaler__mults {
-  display: inline-flex;
-  gap: 6px;
-  margin-left: auto;
+  flex: 1 1 100%;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 .mult {
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
   color: var(--ink);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  padding: 6px 11px;
+  font-family: var(--display-x);
+  font-size: 22px;
+  font-weight: 400;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.mult:last-child {
+  border-right: 0;
 }
 .mult:active {
-  transform: translateY(1px);
+  background: var(--surface);
 }
 .mult[aria-pressed="true"] {
   background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 .scaler__hint {
-  font-size: 12.5px;
-  color: var(--ink-soft);
-  margin: 8px 2px 0;
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: 8px 0 0;
 }
+
+/* Amounts: the editable one is underlined in accent; while typing it
+   fills yellow. Scaled numbers read in the accent ink. */
 input.amt {
   font: inherit;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--accent-ink);
-  background: var(--accent-soft);
-  border: 1px solid transparent;
-  border-radius: 7px;
-  padding: 1px 6px;
-  width: 4.6ch;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid var(--accent-ink);
+  border-radius: 0;
+  padding: 0 2px;
+  margin: 0 1px;
+  /* Room for a stored amount like "1 1/2" in the monospace face. */
+  width: calc(5ch + 4px);
   text-align: center;
   vertical-align: baseline;
   font-variant-numeric: tabular-nums;
 }
+@supports (field-sizing: content) {
+  input.amt {
+    field-sizing: content;
+    width: auto;
+    min-width: calc(3ch + 8px);
+    padding: 0 4px;
+  }
+}
 input.amt:hover {
-  border-color: var(--line);
+  background: var(--surface);
 }
 input.amt:focus {
   outline: none;
-  border-color: var(--accent);
-  background: #fff;
+  background: var(--accent);
+  border-bottom-color: var(--accent);
+  color: var(--on-accent);
 }
 .ing-text .q {
-  font-weight: 700;
+  font-weight: 500;
   color: var(--accent-ink);
   font-variant-numeric: tabular-nums;
 }
@@ -470,6 +762,8 @@ input.amt:focus {
   font-weight: inherit;
   color: inherit;
 }
+
+/* Method: big Anton step numbers. */
 .step-list {
   margin: 0;
   padding: 0;
@@ -479,151 +773,206 @@ input.amt:focus {
 .step-list li {
   display: flex;
   gap: 14px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--line);
-  line-height: 1.5;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 15px;
+  line-height: 1.55;
+}
+.step-list li:first-child {
+  border-top: 1px solid var(--line);
 }
 .step-list li::before {
   counter-increment: step;
-  content: counter(step);
-  flex: 0 0 auto;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  font-weight: 700;
-  font-size: 14px;
-  display: grid;
-  place-items: center;
+  content: counter(step, decimal-leading-zero);
+  flex: 0 0 34px;
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 0.95;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---------- Form ---------- */
 .form {
   display: grid;
-  gap: 16px;
+  align-content: start;
+  gap: 18px;
 }
 .field {
   display: grid;
   gap: 6px;
+  min-width: 0;
 }
 .field > span {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 .field > span em {
   font-weight: 400;
   font-style: normal;
-  opacity: 0.7;
+  letter-spacing: 0.04em;
 }
 .field input,
 .field textarea {
   font-family: inherit;
   font-size: 16px;
+  line-height: 1.45;
   color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 12px 14px;
+  border-radius: 0;
+  padding: 11px 12px;
   outline: none;
   resize: vertical;
   width: 100%;
+  min-width: 0;
+}
+.field input {
+  height: 48px;
 }
 .field input:focus,
 .field textarea:focus {
-  border-color: var(--accent);
+  border-color: var(--accent-ink);
+  box-shadow: inset 0 -2px 0 var(--accent-ink);
+}
+.field input[name="title"] {
+  font-weight: 500;
 }
 .field-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
 }
 
-/* ---------- Gate ---------- */
+/* ---------- Gate: the app's band, then the unlock form ---------- */
 .gate {
   position: fixed;
   inset: 0;
   z-index: 60;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: var(--bg);
+  display: block;
+  overflow-y: auto;
+  padding: var(--safe-top) 0 calc(var(--safe-bottom) + 24px);
+  background: var(--ground);
 }
 .gate__card {
   width: 100%;
-  max-width: 360px;
-  text-align: center;
+  max-width: 480px;
+  margin: 0 auto;
+  text-align: left;
 }
 .gate__icon {
-  font-size: 48px;
+  display: none;
 }
 .gate__card h2 {
-  margin: 8px 0 4px;
-  color: var(--accent-ink);
+  margin: 0 0 22px;
+  padding: 28px var(--gutter) calc(var(--slant) + 20px);
+  background: var(--brand);
+  color: var(--on-brand);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--slant)), 0 100%);
+  font-family: var(--display);
+  font-size: 72px;
+  font-weight: 400;
+  line-height: 0.86;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 .gate__card p {
-  color: var(--ink-soft);
+  margin: 0 var(--gutter) 16px;
   font-size: 14px;
-  margin: 0 0 16px;
+  line-height: 1.5;
+  color: var(--ink-2);
 }
 .gate__card input {
-  width: 100%;
+  display: block;
+  width: calc(100% - 2 * var(--gutter));
+  height: 50px;
+  margin: 0 var(--gutter) 10px;
+  padding: 0 12px;
+  font-family: inherit;
   font-size: 16px;
-  padding: 13px 14px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  color: var(--ink);
   background: var(--surface);
-  margin-bottom: 12px;
+  border: 1px solid var(--line);
+  border-radius: 0;
   outline: none;
 }
+.gate__card input::placeholder {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
 .gate__card input:focus {
-  border-color: var(--accent);
+  border-color: var(--accent-ink);
+  box-shadow: inset 0 -2px 0 var(--accent-ink);
 }
 .gate__card button {
-  width: 100%;
-  padding: 13px;
-  border: none;
-  border-radius: 12px;
+  display: block;
+  width: calc(100% - 2 * var(--gutter));
+  height: 52px;
+  margin: 0 var(--gutter);
+  border: 0;
+  border-radius: 0;
   background: var(--accent);
-  color: #fff;
-  font-size: 16px;
-  font-weight: 700;
+  color: var(--on-accent);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
-.gate__hint {
-  font-size: 12px !important;
-  margin-top: 14px !important;
+.gate__card button:active {
+  filter: brightness(0.9);
+}
+.gate__card button:disabled {
+  cursor: progress;
+}
+.gate__card .gate__hint {
+  margin-top: 16px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
 }
 .gate__hint code {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--ink);
+  border: 1px solid var(--line);
   padding: 1px 5px;
-  border-radius: 5px;
+  border-radius: 0;
 }
 
 /* ---------- Toast ---------- */
 .toast {
   position: fixed;
-  left: 50%;
-  bottom: calc(var(--safe-bottom) + 24px);
-  transform: translateX(-50%);
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: calc(var(--safe-bottom) + 16px);
   z-index: 80;
+  max-width: 480px;
+  margin: 0 auto;
   background: var(--ink);
-  color: #fff;
-  padding: 11px 18px;
-  border-radius: 999px;
-  font-size: 14px;
-  box-shadow: var(--shadow);
-  animation: toastin 0.2s ease;
+  color: var(--ground);
+  padding: 14px 16px;
+  border-radius: 0;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  animation: toastin 0.18s ease-out;
 }
 @keyframes toastin {
   from {
-    transform: translate(-50%, 8px);
+    transform: translateY(8px);
     opacity: 0;
   }
 }
 .toast.err {
-  background: var(--danger);
+  background: var(--bad);
+  color: var(--on-bad);
 }
 
 @media (min-width: 640px) {
@@ -631,6 +980,9 @@ input.amt:focus {
     grid-template-columns: 1fr 1fr;
     max-width: 760px;
     margin: 0 auto;
+  }
+  .card:nth-child(odd) {
+    border-right: 1px solid var(--line);
   }
   .sheet__body {
     max-width: 640px;
